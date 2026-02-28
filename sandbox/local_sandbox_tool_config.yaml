@@ -1,0 +1,38 @@
+# Tool config for Tool-Integrated Reasoning (TIR) training in OpenKimi.
+# The sandbox server must be running before training starts:
+#   cd sandbox && ./start_sandbox.sh
+# Override the URL via the LOCAL_SANDBOX_URL environment variable if needed.
+tools:
+  - class_name: "openkimi.tools.local_sandbox_tool.LocalSandboxTool"
+    config:
+      type: native
+      sandbox_url: "http://127.0.0.1:12345/faas/sandbox/"
+      default_timeout: 30
+      default_language: "python"
+      block_dangerous_code: true
+      safety_mode: "strict"
+      strict_max_timeout: 45
+      max_inflight_requests: 16
+      request_retries: 1
+      max_code_chars: 20000
+      max_output_chars: 12000
+      allowed_languages: ["python"]
+
+    tool_schema:
+      type: "function"
+      function:
+        name: "code_interpreter"
+        description: "Execute Python code in a local sandbox and return stdout/stderr."
+        parameters:
+          type: "object"
+          properties:
+            code:
+              type: "string"
+              description: "Python code to execute."
+            timeout:
+              type: "number"
+              description: "Optional run timeout in seconds."
+            language:
+              type: "string"
+              description: "Optional language tag, default is python."
+          required: ["code"]
