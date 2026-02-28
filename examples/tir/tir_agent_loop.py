@@ -155,7 +155,7 @@ class TIRAgentLoop(ToolAgentLoop):
             extra_fields={},
         )
 
-        # void_turn_mask: 1 if model used sandbox ≥1 time OR wrote a boxed answer.
+        # void_turn_mask: 1 if model used sandbox >=1 time OR wrote a boxed answer.
         void_turn_mask = float(
             (agent_data.sandbox_call_count > 0) or agent_data.has_boxed_answer
         )

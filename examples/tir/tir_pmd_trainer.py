@@ -24,7 +24,7 @@ class TIRPMDTrainer(RayPMDTrainer):
 
     def __init__(self, *args, **kwargs):
         # Register TIRAgentLoop ("tir_agent") before any rollout workers start.
-        import openkimi.tir.tir_agent_loop  # noqa: F401
+        import examples.tir.tir_agent_loop  # noqa: F401
 
         super().__init__(*args, **kwargs)
 
@@ -40,7 +40,7 @@ class TIRPMDTrainer(RayPMDTrainer):
         """Log void-turn / sandbox metrics and optionally apply void_turn_mask, then balance."""
         ntb = batch.non_tensor_batch
 
-        # ── void_turn metrics (always logged) ────────────────────────────────
+        # -- void_turn metrics (always logged) -------------------------------
         if "void_turn_mask" in ntb:
             void_mask_np = np.asarray(ntb["void_turn_mask"], dtype=np.float32).reshape(-1)
             metrics["tir/void_turn_rate"] = float(1.0 - void_mask_np.mean())
@@ -55,11 +55,11 @@ class TIRPMDTrainer(RayPMDTrainer):
                     )
                     batch.batch["response_mask"] = response_mask * void_mask.unsqueeze(-1)
 
-        # ── sandbox metrics (always logged when present) ──────────────────────
+        # -- sandbox metrics (always logged when present) --------------------
         for key, metric_name in [
-            ("sandbox_called",        "tir/sandbox_call_rate"),
-            ("sandbox_success",       "tir/sandbox_success_rate"),
-            ("sandbox_call_count",    "tir/sandbox_call_count_mean"),
+            ("sandbox_called", "tir/sandbox_call_rate"),
+            ("sandbox_success", "tir/sandbox_success_rate"),
+            ("sandbox_call_count", "tir/sandbox_call_count_mean"),
             ("sandbox_success_count", "tir/sandbox_success_count_mean"),
         ]:
             if key in ntb:

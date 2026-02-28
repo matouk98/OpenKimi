@@ -44,8 +44,15 @@ def _tir_compute_score(
 class TIRDAPORewardManager(ExpDAPORewardManager):
     """Experimental DAPORewardManager with data-source-agnostic ensemble scoring."""
 
-    def __init__(self, config, tokenizer, compute_score=None,
-                 reward_router_address=None, reward_model_tokenizer=None, **kwargs):
+    def __init__(
+        self,
+        config,
+        tokenizer,
+        compute_score=None,
+        reward_router_address=None,
+        reward_model_tokenizer=None,
+        **kwargs,
+    ):
         super().__init__(
             config=config,
             tokenizer=tokenizer,
@@ -55,14 +62,14 @@ class TIRDAPORewardManager(ExpDAPORewardManager):
         )
 
 
-# ── Register in experimental reward_loop registry ───────────────────────
+# -- Register in experimental reward_loop registry -----------------------
 from verl.experimental.reward_loop.reward_manager.registry import (  # noqa: E402
     REWARD_LOOP_MANAGER_REGISTRY,
 )
 
 REWARD_LOOP_MANAGER_REGISTRY.setdefault("tir_dapo", TIRDAPORewardManager)
 
-# ── Register in workers registry (fallback) ─────────────────────────────
+# -- Register in workers registry (fallback) -----------------------------
 try:
     from verl.workers.reward_manager.registry import (  # noqa: E402
         REWARD_MANAGER_REGISTRY,

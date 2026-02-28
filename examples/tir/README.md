@@ -2,7 +2,7 @@
 
 PMD + Tool-Integrated Reasoning: multi-turn code interpreter with three additional features on top of vanilla OpenKimi PMD.
 
-**Void-turn masking** (`openkimi/tir/tir_pmd_trainer.py`): turns where the model neither calls a tool nor produces a boxed answer are treated as "void". Their gradient contribution is zeroed in `response_mask` before the policy update. The void-turn rate is always logged as `tir/void_turn_rate` regardless of whether masking is enabled.
+**Void-turn masking** (`examples/tir/tir_pmd_trainer.py`): turns where the model neither calls a tool nor produces a boxed answer are treated as "void". Their gradient contribution is zeroed in `response_mask` before the policy update. The void-turn rate is always logged as `tir/void_turn_rate` regardless of whether masking is enabled.
 
 **Train-inference mismatch correction** (`openkimi/pmd/core_algos.py`): use the fixed upstream `opmd` rollout IS correction. `rollout_is_weights` are reduced to per-sequence scalars via masked mean over valid token positions, then applied before batch aggregation:
 
@@ -12,7 +12,7 @@ seq_is_weights = (rollout_is_weights * response_mask).sum(-1) / response_lengths
 pg_loss = torch.mean(seq_is_weights * per_seq_loss)   # weighted mean ✓
 ```
 
-**Data-source-agnostic reward scoring** (`openkimi/tir/tir_reward_manager.py`): registers `tir_dapo`. Instead of routing by `data_source` (which raises `NotImplementedError` for unknown sources), it tries all three math scorers (`math_reward`, `math_dapo`, `math_verify`) and returns the max — any hit counts as correct.
+**Data-source-agnostic reward scoring** (`examples/tir/tir_reward_manager.py`): registers `tir_dapo`. Instead of routing by `data_source` (which raises `NotImplementedError` for unknown sources), it tries all three math scorers (`math_reward`, `math_dapo`, `math_verify`) and returns the max — any hit counts as correct.
 
 ## 1. Start the sandbox
 
@@ -34,7 +34,7 @@ python3 examples/tir/sandbox/sandbox_smoke_test.py
 
 ## 2. Agent loop (`tir_agent`)
 
-Implemented in `openkimi/tir/tir_agent_loop.py`, registered as `"tir_agent"`.
+Implemented in `examples/tir/tir_agent_loop.py`, registered as `"tir_agent"`.
 
 **System prompt injection**: if the conversation has no system prompt, or the existing one doesn't contain the TIR instructions, the agent prepends:
 

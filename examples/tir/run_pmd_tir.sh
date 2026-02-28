@@ -7,8 +7,8 @@ OPENKIMI_ROOT="$(cd "$PROJECT_DIR/../.." && pwd)"
 VERL_DIR="$OPENKIMI_ROOT/verl"
 CONFIG_PATH="$VERL_DIR/verl/trainer/config"
 TOOL_CONFIG_PATH="${TOOL_CONFIG_PATH:-$OPENKIMI_ROOT/examples/tir/sandbox/local_sandbox_tool_config.yaml}"
-TIR_REWARD_MODULE_PATH="${TIR_REWARD_MODULE_PATH:-$OPENKIMI_ROOT/openkimi/tir/tir_reward_manager.py}"
-TIR_AGENT_LOOP_CONFIG_PATH="${TIR_AGENT_LOOP_CONFIG_PATH:-$OPENKIMI_ROOT/openkimi/tir/tir_agent_loop_config.yaml}"
+TIR_REWARD_MODULE_PATH="${TIR_REWARD_MODULE_PATH:-$OPENKIMI_ROOT/examples/tir/tir_reward_manager.py}"
+TIR_AGENT_LOOP_CONFIG_PATH="${TIR_AGENT_LOOP_CONFIG_PATH:-$OPENKIMI_ROOT/examples/tir/tir_agent_loop_config.yaml}"
 
 export PYTHONPATH="$OPENKIMI_ROOT:$VERL_DIR:${PYTHONPATH:-}"
 export LOCAL_SANDBOX_URL="${LOCAL_SANDBOX_URL:-http://127.0.0.1:12345/faas/sandbox/}"
@@ -86,7 +86,7 @@ if [[ "${SANDBOX_PREFLIGHT}" == "1" ]]; then
   python3 "$OPENKIMI_ROOT/examples/tir/sandbox/sandbox_smoke_test.py" --url "${LOCAL_SANDBOX_URL}" --timeout 20
 fi
 
-python3 -m openkimi.tir.main_tir \
+python3 "$OPENKIMI_ROOT/examples/tir/main_tir.py" \
   --config-path="${CONFIG_PATH}" \
   --config-name='ppo_trainer' \
   \

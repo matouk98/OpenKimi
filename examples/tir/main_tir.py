@@ -4,14 +4,6 @@ Entry point for PMD + Tool-Integrated Reasoning (TIR) training.
 Identical to openkimi.pmd.main_pmd, except:
 - Uses TIRPMDTrainer (supports mask_void_turns).
 - Imports TIRAgentLoop to register the "tir_agent" agent loop name.
-
-Launch:
-    python3 -m openkimi.tir.main_tir \
-        --config-path /path/to/verl/trainer/config \
-        --config-name ppo_trainer \
-        actor_rollout_ref.rollout.agent.default_agent_loop=tir_agent \
-        +actor_rollout_ref.actor.mask_void_turns=True \
-        ...
 """
 
 import os
@@ -22,20 +14,19 @@ import ray
 from omegaconf import OmegaConf
 
 from verl.trainer.constants_ppo import get_ppo_ray_runtime_env
-from verl.trainer.ppo.reward import load_reward_manager
 from verl.trainer.ppo.utils import need_critic, need_reference_policy
+from verl.trainer.main_ppo import create_rl_dataset, create_rl_sampler
 from verl.utils.config import validate_config
 from verl.utils.device import auto_set_device, is_cuda_available
-from verl.trainer.main_ppo import create_rl_dataset, create_rl_sampler
 
-# Register TIRAgentLoop ("tir_agent") in verl's agent loop registry.
-import openkimi.tir.tir_agent_loop  # noqa: F401
-import openkimi.tir.tir_reward_manager  # noqa: F401
+# Register TIR components in this process.
+import examples.tir.tir_agent_loop  # noqa: F401
+import examples.tir.tir_reward_manager  # noqa: F401
 
 # Import PMD algorithm registrations (ploo advantage estimator, opmd loss).
 from openkimi.pmd import core_algos  # noqa: F401
-from openkimi.pmd.main_pmd import TaskRunner, run_ppo
-from openkimi.tir.tir_pmd_trainer import TIRPMDTrainer
+from openkimi.pmd.main_pmd import TaskRunner
+from examples.tir.tir_pmd_trainer import TIRPMDTrainer
 
 
 class TIRTaskRunner(TaskRunner):
@@ -54,10 +45,8 @@ class TIRTaskRunner(TaskRunner):
 
             class TIRActorRolloutRefWorker(ActorRolloutRefWorker):
                 def __init__(self, *args, **kwargs):
-                    # Register PMD loss + TIR agent loop in this actor worker process.
                     import openkimi.pmd.core_algos  # noqa: F401
-                    import openkimi.tir.tir_agent_loop  # noqa: F401
-
+                    import examples.tir.tir_agent_loop  # noqa: F401
                     super().__init__(*args, **kwargs)
 
             actor_rollout_cls = TIRActorRolloutRefWorker
@@ -70,17 +59,13 @@ class TIRTaskRunner(TaskRunner):
             self.mapping[role] = "global_pool"
             return actor_rollout_cls, ray_worker_group_cls
 
-        # Note: sync mode validation is now handled in RolloutConfig.__post_init__.
-        # Always use async worker since sync mode is deprecated and rejected.
         if config.actor_rollout_ref.actor.strategy in {"fsdp", "fsdp2"}:
             from verl.workers.fsdp_workers import AsyncActorRolloutRefWorker
 
             class TIRAsyncActorRolloutRefWorker(AsyncActorRolloutRefWorker):
                 def __init__(self, *args, **kwargs):
-                    # Register PMD loss + TIR agent loop in this actor worker process.
                     import openkimi.pmd.core_algos  # noqa: F401
-                    import openkimi.tir.tir_agent_loop  # noqa: F401
-
+                    import examples.tir.tir_agent_loop  # noqa: F401
                     super().__init__(*args, **kwargs)
 
             actor_rollout_cls = TIRAsyncActorRolloutRefWorker
@@ -91,15 +76,12 @@ class TIRTaskRunner(TaskRunner):
 
             class TIRAsyncActorRolloutRefWorker(AsyncActorRolloutRefWorker):
                 def __init__(self, *args, **kwargs):
-                    # Register PMD loss + TIR agent loop in this actor worker process.
                     import openkimi.pmd.core_algos  # noqa: F401
-                    import openkimi.tir.tir_agent_loop  # noqa: F401
-
+                    import examples.tir.tir_agent_loop  # noqa: F401
                     super().__init__(*args, **kwargs)
 
             actor_rollout_cls = TIRAsyncActorRolloutRefWorker
             ray_worker_group_cls = RayWorkerGroup
-
         else:
             raise NotImplementedError
 
@@ -109,21 +91,17 @@ class TIRTaskRunner(TaskRunner):
 
     def run(self, config):
         from pprint import pprint
-        from omegaconf import OmegaConf
         from verl.utils.dataset.rl_dataset import collate_fn
         from verl.utils.fs import copy_to_local
 
-        # Re-import inside the Ray worker process to trigger @register decorators.
-        import openkimi.tir.tir_agent_loop    # noqa: F401
-
-        # Directly register tir_dapo in both reward registries.
-        from openkimi.tir.tir_reward_manager import TIRDAPORewardManager
+        import examples.tir.tir_agent_loop  # noqa: F401
+        from examples.tir.tir_reward_manager import TIRDAPORewardManager
         from verl.workers.reward_manager.registry import REWARD_MANAGER_REGISTRY
+
         REWARD_MANAGER_REGISTRY.setdefault("tir_dapo", TIRDAPORewardManager)
         try:
-            from verl.experimental.reward_loop.reward_manager.registry import (
-                REWARD_LOOP_MANAGER_REGISTRY,
-            )
+            from verl.experimental.reward_loop.reward_manager.registry import REWARD_LOOP_MANAGER_REGISTRY
+
             REWARD_LOOP_MANAGER_REGISTRY.setdefault("tir_dapo", TIRDAPORewardManager)
         except Exception:
             pass
@@ -154,22 +132,26 @@ class TIRTaskRunner(TaskRunner):
         tokenizer = hf_tokenizer(local_path, trust_remote_code=trust_remote_code)
         processor = hf_processor(local_path, trust_remote_code=trust_remote_code, use_fast=True)
 
-        reward_fn = TIRDAPORewardManager(
-            config=config, tokenizer=tokenizer,
-        )
-        val_reward_fn = TIRDAPORewardManager(
-            config=config, tokenizer=tokenizer,
-        )
+        reward_fn = TIRDAPORewardManager(config=config, tokenizer=tokenizer)
+        val_reward_fn = TIRDAPORewardManager(config=config, tokenizer=tokenizer)
 
         resource_pool_manager = self.init_resource_pool_mgr(config)
 
         train_dataset = create_rl_dataset(
-            config.data.train_files, config.data, tokenizer, processor,
-            is_train=True, max_samples=config.data.get("train_max_samples", -1),
+            config.data.train_files,
+            config.data,
+            tokenizer,
+            processor,
+            is_train=True,
+            max_samples=config.data.get("train_max_samples", -1),
         )
         val_dataset = create_rl_dataset(
-            config.data.val_files, config.data, tokenizer, processor,
-            is_train=False, max_samples=config.data.get("val_max_samples", -1),
+            config.data.val_files,
+            config.data,
+            tokenizer,
+            processor,
+            is_train=False,
+            max_samples=config.data.get("val_max_samples", -1),
         )
         train_sampler = create_rl_sampler(config.data, train_dataset)
 
@@ -191,7 +173,7 @@ class TIRTaskRunner(TaskRunner):
         trainer.fit()
 
 
-@hydra.main(config_path="../pmd/config", config_name="ppo_trainer", version_base=None)
+@hydra.main(config_path="../../verl/verl/trainer/config", config_name="ppo_trainer", version_base=None)
 def main(config):
     auto_set_device(config)
 
@@ -211,7 +193,6 @@ def main(config):
         ray.init(**OmegaConf.to_container(ray_init_kwargs))
 
     task_runner_class = ray.remote(num_cpus=1)(TIRTaskRunner)
-
     if (
         is_cuda_available
         and config.global_profiler.tool == "nsys"
@@ -219,6 +200,7 @@ def main(config):
         and len(config.global_profiler.get("steps", [])) > 0
     ):
         from verl.utils.import_utils import is_nvtx_available
+
         assert is_nvtx_available(), "nvtx is not available. Please 'pip3 install nvtx'"
         nsight_options = OmegaConf.to_container(
             config.global_profiler.global_tool_config.nsys.controller_nsight_options

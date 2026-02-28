@@ -21,6 +21,7 @@ env/
 logs/
 *.log
 sandbox/sandbox.log
+examples/tir/sandbox/sandbox.log
 wandb/
 wget-log
 

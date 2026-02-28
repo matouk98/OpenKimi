@@ -1,2 +1,0 @@
-- name: tir_agent
-  _target_: openkimi.tir.tir_agent_loop.TIRAgentLoop
