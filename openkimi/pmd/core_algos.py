@@ -163,31 +163,30 @@ def compute_policy_loss_opmd(
     else:
         seq_partition_weights = torch.ones_like(seq_advantages)
 
-    # MSE term in Eq. (3), https://arxiv.org/pdf/2501.12599
-    # Scale by length to normalize loss magnitude
+    # Reduce rollout IS weights from (batch, seq_len) to per-sequence scalars (batch,).
+    if rollout_is_weights is not None:
+        seq_is_weights = (rollout_is_weights * response_mask).sum(dim=-1) / response_lengths
+    else:
+        seq_is_weights = torch.ones_like(seq_advantages)
+
+    # Per-sequence MSE term in Eq. (3), https://arxiv.org/pdf/2501.12599
+    # Apply sequence-level IS weights before batch reduction.
+    seq_loss = (
+        seq_is_weights
+        * 0.5
+        * pmd_tau
+        * seq_partition_weights
+        * ((seq_advantages / pmd_tau - seq_log_prob_ratio) ** 2)
+    )
+
+    # Scale by length to normalize loss magnitude.
     max_response_length = response_mask.shape[1]
     if loss_agg_mode == "seq-mean-token-mean":  # default
-        weighted_loss = torch.mean(
-            0.5
-            * pmd_tau
-            * seq_partition_weights
-            * ((seq_advantages / pmd_tau - seq_log_prob_ratio) ** 2)
-            / response_lengths
-        )
-        pg_loss = weighted_loss
+        pg_loss = torch.mean(seq_loss / response_lengths)
     elif loss_agg_mode == "seq-mean-token-sum-norm":
-        weighted_loss = torch.mean(
-            0.5
-            * pmd_tau
-            * seq_partition_weights
-            * ((seq_advantages / pmd_tau - seq_log_prob_ratio) ** 2)
-        )
-        pg_loss = weighted_loss / max_response_length
+        pg_loss = torch.mean(seq_loss) / max_response_length
     else:
         raise NotImplementedError
-
-    if rollout_is_weights is not None:
-        pg_loss = pg_loss * rollout_is_weights
 
     # Compute KL(pi_old || pi_theta) for monitoring (sequence-level to match loss)
     seq_kl = -seq_log_prob_ratio / response_lengths  # Normalize by length
