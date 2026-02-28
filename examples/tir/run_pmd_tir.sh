@@ -49,7 +49,7 @@ MASK_VOID_TURNS="${MASK_VOID_TURNS:-False}"
 
 # ── PMD algorithm ─────────────────────────────────────────────────────────────
 ADV_ESTIMATOR="${ADV_ESTIMATOR:-rloo}"    # rloo = PMD-mean, ploo = PMD-partition
-POLICY_LOSS_MODE="${POLICY_LOSS_MODE:-tir_opmd}"
+POLICY_LOSS_MODE="${POLICY_LOSS_MODE:-opmd}"
 PMD_TAU="${PMD_TAU:-0.01}"
 PMD_REWARD_LB="${PMD_REWARD_LB:-null}"
 PMD_REWARD_UB="${PMD_REWARD_UB:-null}"

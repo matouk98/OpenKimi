@@ -32,9 +32,6 @@ from verl.trainer.main_ppo import create_rl_dataset, create_rl_sampler
 import openkimi.tir.tir_agent_loop  # noqa: F401
 import openkimi.tir.tir_reward_manager  # noqa: F401
 
-# Register "tir_opmd" policy loss (IS-corrected PMD loss for TIR).
-import openkimi.tir.tir_core_algos  # noqa: F401
-
 # Import PMD algorithm registrations (ploo advantage estimator, opmd loss).
 from openkimi.pmd import core_algos  # noqa: F401
 from openkimi.pmd.main_pmd import TaskRunner, run_ppo
@@ -45,7 +42,7 @@ class TIRTaskRunner(TaskRunner):
     """TaskRunner that uses TIRPMDTrainer instead of RayPMDTrainer."""
 
     def add_actor_rollout_worker(self, config):
-        """Add actor rollout worker and register PMD/TIR losses in worker processes."""
+        """Add actor rollout worker and register PMD + TIR agent loop in worker processes."""
         from verl.single_controller.ray import RayWorkerGroup
         from verl.trainer.ppo.ray_trainer import Role
 
@@ -57,9 +54,8 @@ class TIRTaskRunner(TaskRunner):
 
             class TIRActorRolloutRefWorker(ActorRolloutRefWorker):
                 def __init__(self, *args, **kwargs):
-                    # Register PMD/TIR loss + TIR agent loop in this actor worker process.
+                    # Register PMD loss + TIR agent loop in this actor worker process.
                     import openkimi.pmd.core_algos  # noqa: F401
-                    import openkimi.tir.tir_core_algos  # noqa: F401
                     import openkimi.tir.tir_agent_loop  # noqa: F401
 
                     super().__init__(*args, **kwargs)
@@ -81,9 +77,8 @@ class TIRTaskRunner(TaskRunner):
 
             class TIRAsyncActorRolloutRefWorker(AsyncActorRolloutRefWorker):
                 def __init__(self, *args, **kwargs):
-                    # Register PMD/TIR loss + TIR agent loop in this actor worker process.
+                    # Register PMD loss + TIR agent loop in this actor worker process.
                     import openkimi.pmd.core_algos  # noqa: F401
-                    import openkimi.tir.tir_core_algos  # noqa: F401
                     import openkimi.tir.tir_agent_loop  # noqa: F401
 
                     super().__init__(*args, **kwargs)
@@ -96,9 +91,8 @@ class TIRTaskRunner(TaskRunner):
 
             class TIRAsyncActorRolloutRefWorker(AsyncActorRolloutRefWorker):
                 def __init__(self, *args, **kwargs):
-                    # Register PMD/TIR loss + TIR agent loop in this actor worker process.
+                    # Register PMD loss + TIR agent loop in this actor worker process.
                     import openkimi.pmd.core_algos  # noqa: F401
-                    import openkimi.tir.tir_core_algos  # noqa: F401
                     import openkimi.tir.tir_agent_loop  # noqa: F401
 
                     super().__init__(*args, **kwargs)
@@ -121,11 +115,6 @@ class TIRTaskRunner(TaskRunner):
 
         # Re-import inside the Ray worker process to trigger @register decorators.
         import openkimi.tir.tir_agent_loop    # noqa: F401
-
-        # Directly register tir_opmd policy loss in the Ray worker process.
-        from openkimi.tir.tir_core_algos import compute_policy_loss_tir_opmd
-        from verl.trainer.ppo.core_algos import POLICY_LOSS_REGISTRY
-        POLICY_LOSS_REGISTRY.setdefault("tir_opmd", compute_policy_loss_tir_opmd)
 
         # Directly register tir_dapo in both reward registries.
         from openkimi.tir.tir_reward_manager import TIRDAPORewardManager

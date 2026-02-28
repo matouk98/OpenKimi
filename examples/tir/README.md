@@ -4,14 +4,10 @@ PMD + Tool-Integrated Reasoning: multi-turn code interpreter with three addition
 
 **Void-turn masking** (`openkimi/tir/tir_pmd_trainer.py`): turns where the model neither calls a tool nor produces a boxed answer are treated as "void". Their gradient contribution is zeroed in `response_mask` before the policy update. The void-turn rate is always logged as `tir/void_turn_rate` regardless of whether masking is enabled.
 
-**Train-inference mismatch correction** (`openkimi/tir/tir_core_algos.py`): registers a new policy loss `tir_opmd`. The original `opmd` in OpenKimi has a bug where `rollout_is_weights` (shape `batch × seq_len`) is multiplied with the loss *after* `torch.mean()`, i.e. a scalar times a 2-D tensor — the weighting is effectively a no-op. `tir_opmd` fixes this by first reducing IS weights to per-sequence scalars via masked mean over valid token positions, then multiplying *before* `torch.mean()`:
+**Train-inference mismatch correction** (`openkimi/pmd/core_algos.py`): use the fixed upstream `opmd` rollout IS correction. `rollout_is_weights` are reduced to per-sequence scalars via masked mean over valid token positions, then applied before batch aggregation:
 
 ```python
-# opmd (original, broken)
-pg_loss = torch.mean(per_seq_loss)        # scalar
-pg_loss = pg_loss * rollout_is_weights    # scalar × (batch, seq_len) → wrong
-
-# tir_opmd (fixed)
+# opmd (fixed upstream)
 seq_is_weights = (rollout_is_weights * response_mask).sum(-1) / response_lengths  # (batch,)
 pg_loss = torch.mean(seq_is_weights * per_seq_loss)   # weighted mean ✓
 ```

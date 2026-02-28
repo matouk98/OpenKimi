@@ -18,8 +18,6 @@ import torch
 from verl import DataProto
 from openkimi.pmd.pmd_ray_trainer import RayPMDTrainer
 
-import openkimi.tir.tir_core_algos  # noqa: F401  – register "tir_opmd" policy loss
-
 
 class TIRPMDTrainer(RayPMDTrainer):
     """RayPMDTrainer + void-turn masking for Tool-Integrated Reasoning."""
