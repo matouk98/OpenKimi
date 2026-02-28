@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Start the adaptive sandbox API (no simpletir dependency).
 # Same port/path as before: http://127.0.0.1:12345/faas/sandbox/
-# Run from adaptive/sandbox/:  ./start_sandbox.sh
+# Run from examples/tir/sandbox/:  ./start_sandbox.sh
 set -euo pipefail
 
 SANDBOX_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

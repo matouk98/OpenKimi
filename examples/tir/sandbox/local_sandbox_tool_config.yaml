@@ -1,9 +1,9 @@
 # Tool config for Tool-Integrated Reasoning (TIR) training in OpenKimi.
 # The sandbox server must be running before training starts:
-#   cd sandbox && ./start_sandbox.sh
+#   cd examples/tir/sandbox && ./start_sandbox.sh
 # Override the URL via the LOCAL_SANDBOX_URL environment variable if needed.
 tools:
-  - class_name: "openkimi.tools.local_sandbox_tool.LocalSandboxTool"
+  - class_name: "examples.tir.tools.local_sandbox_tool.LocalSandboxTool"
     config:
       type: native
       sandbox_url: "http://127.0.0.1:12345/faas/sandbox/"

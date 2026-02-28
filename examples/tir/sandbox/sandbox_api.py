@@ -4,7 +4,7 @@ Minimal sandbox API for LocalSandboxTool (agentic GRPO).
 Compatible with LocalSandboxTool and sandbox_smoke_test.py; no dependency on simpletir.
 
 Start from this directory:
-  cd /path/to/adaptive/sandbox
+  cd /path/to/OpenKimi/examples/tir/sandbox
   ./start_sandbox.sh
 Or: uvicorn sandbox_api:app --host 127.0.0.1 --port 12345 [--workers 4]
 """

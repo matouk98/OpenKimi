@@ -24,12 +24,12 @@ pip install fastapi uvicorn pydantic
 
 Start:
 ```bash
-cd sandbox && ./start_sandbox.sh
+cd examples/tir/sandbox && ./start_sandbox.sh
 ```
 
 Verify it's up:
 ```bash
-python3 sandbox/sandbox_smoke_test.py
+python3 examples/tir/sandbox/sandbox_smoke_test.py
 ```
 
 ## 2. Agent loop (`tir_agent`)

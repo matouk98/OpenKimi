@@ -2,10 +2,10 @@
 LocalSandboxTool: executes Python code via a local sandbox HTTP endpoint.
 
 The sandbox server must be running before training starts:
-    cd sandbox && ./start_sandbox.sh
+    cd examples/tir/sandbox && ./start_sandbox.sh
 Or set LOCAL_SANDBOX_URL to point to any compatible sandbox endpoint.
 
-Tool config path: sandbox/local_sandbox_tool_config.yaml
+Tool config path: examples/tir/sandbox/local_sandbox_tool_config.yaml
 """
 
 import asyncio
@@ -23,9 +23,9 @@ from verl.tools.schemas import OpenAIFunctionToolSchema, ToolResponse
 class LocalSandboxTool(BaseTool):
     """Execute Python code via a local sandbox HTTP endpoint.
 
-    Compatible with the sandbox server in sandbox/sandbox_api.py.
+    Compatible with the sandbox server in examples/tir/sandbox/sandbox_api.py.
     The tool config YAML should set class_name to
-    ``openkimi.tools.local_sandbox_tool.LocalSandboxTool``.
+    ``examples.tir.tools.local_sandbox_tool.LocalSandboxTool``.
     """
 
     def __init__(self, config: dict, tool_schema: OpenAIFunctionToolSchema):
