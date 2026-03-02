@@ -18,8 +18,9 @@ if [[ -n "${WANDB_API_KEY:-}" ]]; then
   python3 -c "import wandb; wandb.login(key='${WANDB_API_KEY}', relogin=True)"
 fi
 
-TRAIN_FILES="${TRAIN_FILES:-['/mnt/project/yuheng/dataset/deepscaler/train.parquet']}"
-VAL_FILES="${VAL_FILES:-['/mnt/project/yuheng/dataset/aime/aime24.parquet','/mnt/project/yuheng/dataset/aime/aime25.parquet']}"
+# Default to public Hugging Face dataset parquet links.
+TRAIN_FILES="${TRAIN_FILES:-['https://huggingface.co/datasets/MatouK98/Math-DAPO/resolve/main/train.parquet']}"
+VAL_FILES="${VAL_FILES:-['https://huggingface.co/datasets/MatouK98/AIME24/resolve/main/aime24.parquet','https://huggingface.co/datasets/MatouK98/AIME25/resolve/main/aime25.parquet']}"
 
 TRAIN_BATCH_SIZE="${TRAIN_BATCH_SIZE:-512}"
 PPO_MINI_BATCH_SIZE="${PPO_MINI_BATCH_SIZE:-32}"
@@ -60,10 +61,11 @@ MODEL_PATH="${MODEL_PATH:-Qwen/Qwen3-4B}"
 MODEL_NAME_FOR_EXP="${MODEL_PATH##*/}"
 TRAIN_DATASET_TAG="$(
   echo "${TRAIN_FILES}" \
-  | sed -E "s#/mnt/project/yuheng/dataset/##g; s#\\.parquet##g" \
   | tr -d "[]'\" " \
-  | tr '/' '-' \
-  | tr ',' '+'
+  | tr ',' '\n' \
+  | sed -nE 's#.*datasets/[^/]+/([^/]+)/.*#\1#p' \
+  | tr '[:upper:]' '[:lower:]' \
+  | paste -sd+ -
 )"
 TRAIN_DATASET_TAG="${TRAIN_DATASET_TAG:-unknown_dataset}"
 PROJECT_NAME="${PROJECT_NAME:-openkimi_tir}"
@@ -75,7 +77,7 @@ if [[ "${MODEL_PATH}" == *"Qwen3"* ]]; then
 fi
 
 LOG_DIR="${LOG_DIR:-$OPENKIMI_ROOT/logs}"
-CKPT_ROOT_DIR="${CKPT_ROOT_DIR:-/mnt/project/yuheng/exp}"
+CKPT_ROOT_DIR="${CKPT_ROOT_DIR:-$OPENKIMI_ROOT/exp}"
 mkdir -p "${LOG_DIR}"
 RUN_TS="$(date +%Y%m%d_%H%M%S)"
 LOG_FILE="${LOG_FILE:-${LOG_DIR}/${EXP_NAME}_${RUN_TS}.log}"
@@ -136,6 +138,7 @@ python3 "$OPENKIMI_ROOT/examples/tir/main_tir.py" \
   actor_rollout_ref.rollout.multi_turn.enable=True \
   actor_rollout_ref.rollout.multi_turn.max_assistant_turns="${MAX_TURNS}" \
   actor_rollout_ref.rollout.multi_turn.max_user_turns="${MAX_TURNS}" \
+  actor_rollout_ref.rollout.multi_turn.max_parallel_calls=1 \
   actor_rollout_ref.rollout.multi_turn.tool_config_path="${TOOL_CONFIG_PATH}" \
   actor_rollout_ref.rollout.agent.default_agent_loop=tir_agent \
   actor_rollout_ref.rollout.agent.agent_loop_config_path="${TIR_AGENT_LOOP_CONFIG_PATH}" \
